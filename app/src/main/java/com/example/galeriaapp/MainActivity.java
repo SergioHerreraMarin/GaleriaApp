@@ -9,7 +9,6 @@ import android.provider.MediaStore;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
-
 import androidx.activity.result.ActivityResult;
 import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
@@ -17,18 +16,20 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
-
-    private ActivityResultLauncher<Intent> someActivityResultLauncher;
-    private ActivityResultLauncher<Intent> activityResultLauncherCamera;
+    static final int REQUEST_IMAGE_CAPTURE = 1;
     ImageView imageView;
-    private Button buttonOpen, buttonOpenCamera;
-    public static int RC_PHOTO_PICKER = 0;
+    private Button buttonGallery;
+    private Button buttonCamera;
+    private ActivityResultLauncher<Intent> someActivityResultLauncher;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        buttonOpen = findViewById(R.id.buttonOpen);
-        buttonOpenCamera = findViewById(R.id.buttonOpenCamera);
+        imageView = findViewById(R.id.img);
+        buttonGallery =  findViewById(R.id.buttonOpenGallery);
+        buttonCamera = findViewById(R.id.buttonOpenCamera);
+
         someActivityResultLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 new ActivityResultCallback<ActivityResult>() {
@@ -44,37 +45,23 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
 
-        activityResultLauncherCamera = registerForActivityResult(
-                new ActivityResultContracts.StartActivityForResult(),
-                new ActivityResultCallback<ActivityResult>() {
-                    @Override
-                    public void onActivityResult(ActivityResult result) {
-                        if (result.getResultCode() == Activity.RESULT_OK) {
-                            Intent data = result.getData();
-                            Bundle extras = data.getExtras();
-                            Bitmap imageBitmap = (Bitmap) extras.get("data");
-                            imageView.setImageBitmap(imageBitmap);
-                        }
-                    }
-                });
 
-        buttonOpen.setOnClickListener(new View.OnClickListener() {
+        buttonGallery.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                openSomeActivityForResult(null);
+                openGallery(null);
             }
         });
 
-        buttonOpenCamera.setOnClickListener(new View.OnClickListener() {
+        buttonCamera.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                openCamera();
+                dispatchTakePictureIntent();
             }
         });
-
     }
 
-    public void openSomeActivityForResult(View view) {
+    public void openGallery(View view) {
         //Create Intent
         Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
         intent.setType("image/jpg");
@@ -83,17 +70,18 @@ public class MainActivity extends AppCompatActivity {
         someActivityResultLauncher.launch(intent);
     }
 
-
-    public void openCamera(){
-        //Create Intent
-        Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        intent.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
-        //Launch activity to get result
-        someActivityResultLauncher.launch(intent);
+    private void dispatchTakePictureIntent() {
+        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
     }
 
 
-
-
-
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
+            Bundle extras = data.getExtras();
+            Bitmap imageBitmap = (Bitmap) extras.get("data");
+            imageView.setImageBitmap(imageBitmap);
+        }
+    }
 }
